@@ -1,21 +1,21 @@
 # file I/O
 import gzip
 import numpy as np
+import time
+import pandas as pd
 
-train = []
-values = []
-strings = []
-with gzip.open('../train.csv.gz') as f:
-	for line in f:
-		if line[0] == 's': ## pass over first line
-			continue
-		zzz = line.split(',')
-		train.append([bool(x) for x in zzz[1:-1]])
-		values.append(float(zzz[-1]))
-		strings.append(zzz[0])
+start_time = time.time()
 
-train_x = np.array(train, dtype=bool)
-train_y = np.array(values)
+trainData = pd.read_csv('../train.csv.gz',compression="gzip")
+train_y = trainData.loc[:,"gap"]
+train_x = trainData.loc[:,:]
+train_x = train_x.drop("smiles",axis=1)
+train_x = train_x.drop("gap",axis=1)
+
+train_y = np.array(train_y)
+train_x = np.array(train_x)
+
+print("--- %s seconds ---" % (time.time() - start_time))
 
 '''
 # save out numpy arrays to avoid recoompute
@@ -44,10 +44,17 @@ for (nt, md) in [(i,j) for i in n_trees for j in max_depth]:
 	for trial in range(k):
 		# fit the model to a random subset
 		sample = np.random.choice(train_x.shape[0],2*n) ## half is train, half is validation
+
+		# Create a random forest object with the n_trees and depth parameters. Will have 72 total models (3x3x8)
 		clf = ens.RandomForestRegressor(n_estimators=nt, n_jobs=-1, max_depth = md, warm_start=True)
+
+		# Fit this model to the data. train_x[(the first 1000 of the 2*1000 block of validation + training data), all features], train_y label vector
 		clf.fit(train_x[sample[0:n],:], train_y[sample[0:n]])
-		# test and store mse
+
+		# test and store mse predict(train_x[sample[n:-1] means that you take the second half of the 2*1000 sample (validation), all features])
 		xhat = clf.predict(train_x[sample[n:-1],:])
+
+		# take the Mean Squared error (diff between the actual value of train_y and the xhat predicted by the model)
 		mse.append(sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1))
 	print '{0} Trees, {1} Depth: {2}'.format(nt, md, sum(mse)/float(len(mse)))
 
