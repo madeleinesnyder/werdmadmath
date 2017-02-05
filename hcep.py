@@ -16,22 +16,40 @@ with gzip.open('../train.csv.gz') as f:
 
 train_x = np.array(train, dtype=bool)
 train_y = np.array(values)
-print train_x.shape, train_y.shape
+
+'''
+# save out numpy arrays to avoid recoompute
+import pickle
+with open('trainx.pkl', 'wb') as x:
+	pickle.dump(train_x, x)
+with open('trainy.pkl', 'wb') as y:
+	pickle.dump(train_y, y)
+'''
 
 # model building
 import sklearn.ensemble as ens
 
 # random k-fold validation
-n = 2500 ## fold size
+n = 10000 ## fold size
 k = 8 ## number of repetitions
 
-# todo: grid search for n_estimators and max_depth (default is until accuracy is 100%)
-for trial in range(k):
-	sample = np.random.choice(train_x.shape[0],2*n) ## half is train, half is validation
-	clf = ens.RandomForestRegressor(n_estimators=75, n_jobs=-1, warm_start=True)
-	clf.fit(train_x[sample[0:n],:], train_y[sample[0:n]])
-	xhat = clf.predict(train_x[sample[n:-1],:])
-	print sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1)
+# grid search parameters
+n_trees = [20, 100, 500]
+max_depth = [None, 10, 50]
+
+# grid search for n_estimators and max_depth (default is until accuracy is 100%)
+for (nt, md) in [(i,j) for i in n_trees for j in max_depth]: 
+	print nt, md
+	mse = []
+	for trial in range(k):
+		# fit the model to a random subset
+		sample = np.random.choice(train_x.shape[0],2*n) ## half is train, half is validation
+		clf = ens.RandomForestRegressor(n_estimators=nt, n_jobs=-1, max_depth = md, warm_start=True)
+		clf.fit(train_x[sample[0:n],:], train_y[sample[0:n]])
+		# test and store mse
+		xhat = clf.predict(train_x[sample[n:-1],:])
+		mse.append(sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1))
+	print '{0} Trees, {1} Depth: {2}'.format(nt, md, sum(mse)/float(len(mse)))
 
 
 '''
