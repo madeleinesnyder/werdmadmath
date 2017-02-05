@@ -5,7 +5,7 @@ import numpy as np
 train = []
 values = []
 strings = []
-with gzip.open('train.csv.gz') as f:
+with gzip.open('../train.csv.gz') as f:
 	for line in f:
 		if line[0] == 's': ## pass over first line
 			continue
@@ -14,26 +14,27 @@ with gzip.open('train.csv.gz') as f:
 		values.append(float(zzz[-1]))
 		strings.append(zzz[0])
 
-train_x = np.array(train,dtype=bool)
+train_x = np.array(train, dtype=bool)
 train_y = np.array(values)
+print train_x.shape, train_y.shape
 
 # model building
 import sklearn.ensemble as ens
-clf = ens.RandomForestRegressor(n_estimators=75, n_jobs=-1, warm_start=True)
-uhhh = clf.fit(train_x[1:1000], train_y[1:1000])
-xhat = clf.predict(train_x[1000:2000])
 
-print sum([(train_y[1000+i] - xhat[i])**2 for i in range(1000)])/1000.0
+# random k-fold validation
+n = 2500 ## fold size
+k = 8 ## number of repetitions
+
+# todo: grid search for n_estimators and max_depth (default is until accuracy is 100%)
+for trial in range(k):
+	sample = np.random.choice(train_x.shape[0],2*n) ## half is train, half is validation
+	clf = ens.RandomForestRegressor(n_estimators=75, n_jobs=-1, warm_start=True)
+	clf.fit(train_x[sample[0:n],:], train_y[sample[0:n]])
+	xhat = clf.predict(train_x[sample[n:-1],:])
+	print sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1)
 
 
 '''
-# plot
-import matplotlib.pyplot as plt 
-plt.plot(range(1000), xhat, 'ro', range(1000), train_y[1000:2000], 'bo')
-plt.show()
-
-
-
 # predicting
 test_values = []
 with gzip.open('test.csv.gz') as g:
