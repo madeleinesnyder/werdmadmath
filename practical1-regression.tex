@@ -55,11 +55,7 @@
 	\begin{center}
 		c1sc(-c2sc(-c3ccc(cc3)-c3scc4sccc34)c3[se]ccc23)c2sccc12
 	\end{center}
-	This SMILES string is a molecule that looks like this:
-	\begin{center}
-		\includegraphics[width=3in]{molecule}
-	\end{center}
-	
+
 	One of the challenges of making predictions about molecules is finding a good feature representation.  Clearly, the SMILES string itself isn't going to be all that helpful.  Luckily, many chemists have built tools to build interesting representations.  One such tool is a Python package called \href{http://www.rdkit.org/}{RDKit}.  With it you can easily load SMILES strings and produce features. Alternatively, you can just use the features we've already extracted with RDKit, which produced 256-dimensional binary vectors.  These vectors are in the training and test files provided.
 	
 	\subsection*{Data Files}
