@@ -15,7 +15,7 @@ train_x = train_x.drop("gap",axis=1)
 train_y = np.array(train_y)
 train_x = np.array(train_x)
 
-print("--- %s seconds ---" % (time.time() - start_time))
+# print("--- %s seconds ---" % (time.time() - start_time))
 
 '''
 # save out numpy arrays to avoid recoompute
@@ -30,16 +30,15 @@ with open('trainy.pkl', 'wb') as y:
 import sklearn.ensemble as ens
 
 # random k-fold validation
-n = 10000 ## fold size
-k = 8 ## number of repetitions
+n = 20000 ## fold size
+k = 4 ## number of repetitions
 
 # grid search parameters
-n_trees = [20, 100, 500]
+n_trees = [10, 50, 250]
 max_depth = [None, 10, 50]
 
 # grid search for n_estimators and max_depth (default is until accuracy is 100%)
 for (nt, md) in [(i,j) for i in n_trees for j in max_depth]: 
-	print nt, md
 	mse = []
 	for trial in range(k):
 		# fit the model to a random subset
@@ -54,8 +53,8 @@ for (nt, md) in [(i,j) for i in n_trees for j in max_depth]:
 		# test and store mse predict(train_x[sample[n:-1] means that you take the second half of the 2*1000 sample (validation), all features])
 		xhat = clf.predict(train_x[sample[n:-1],:])
 
-		# take the Mean Squared error (diff between the actual value of train_y and the xhat predicted by the model)
-		mse.append(sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1))
+		# take the Root Mean Squared error (diff between the actual value of train_y and the xhat predicted by the model)
+		mse.append((sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1))**0.5)
 	print '{0} Trees, {1} Depth: {2}'.format(nt, md, sum(mse)/float(len(mse)))
 
 
