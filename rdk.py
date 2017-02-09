@@ -7,30 +7,24 @@ import time
 import pandas as pd
 import pickle
 
-trainData = pd.read_csv('train.csv.gz',compression="gzip")
+trainData = pd.read_csv('../test.csv.gz',compression="gzip")
 train_labels = trainData.loc[:,"smiles"]
 
 # Morgan fingerprint features 
+bits = 256
 
-trunk = 100000
-bits = 32
-features = np.zeros((bits,trunk))
-
+features = np.zeros((len(train_labels), bits))
 for i,label in enumerate(train_labels):
-	if i == trunk:
-		break 
 	if i % 10000 == 0:
-		print "{0}0000 molecules done!".format(i / 10000)
+		print "{0}0000 molecules done!".format(i / 10000 + 1)
 	m = Chem.MolFromSmiles(label)
 	fp1 = AllChem.GetMorganFingerprintAsBitVect(m,2,nBits=bits)
-	features[:,i] = np.array(fp1)
+	features[i,:] = np.array(fp1, dtype=bool)
 
-features = features[:, features.any(axis=0)]
-print features.shape
+try:
+	features = features[:, features.any(axis=0)]
+except:
+	features = features[features.any(axis=0), :]
 
-with gzip.open('pickled_features.tar.gz', 'wb') as out:
-	pickle.dump(features, out)
-
-
-# pd.csv_write(compression="gzip") 
+pd.DataFrame(features).to_csv('../test_256features.csv.gz', compression='gzip')
 

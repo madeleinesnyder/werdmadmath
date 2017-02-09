@@ -26,7 +26,7 @@ with open('trainx.pkl', 'wb') as x:
 with open('trainy.pkl', 'wb') as y:
 	pickle.dump(train_y, y)
 '''
-
+print 'reading training data...'
 smiles = []
 train_y = []
 with gzip.open('../train.csv.gz', 'r') as fu:
@@ -49,18 +49,43 @@ with gzip.open('../256_features.csv.gz', 'r') as f:
 		x = line.split(',')
 		train_x[:,line_id] = [bool(float(i)) for i in x[1:]]
 		line_id = line_id + 1
-		
-		
 
+print 'reading testing data...'		
+test_x = np.zeros((824230, 256), dtype=bool)
+with gzip.open('../test_256features.csv.gz', 'r') as fuu:
+	line_id = -1
+	for line in fuu:
+		if line_id == -1:
+			line_id = line_id + 1
+			continue
+		x = line.split(',')
+		test_x[line_id,:] = [bool(float(i)) for i in x[1:]]
+		line_id = line_id + 1			
+
+print test_x.shape
+print train_x.shape
 # model building
 import sklearn.ensemble as ens
 
+print 'fitting model...'
+clf = ens.GradientBoostingRegressor(n_estimators=75, max_depth=6)
+clf.fit(train_x, train_y)
+print 'generating predictions...'
+test_y = clf.predict(test_x)
+
+print 'writing predictions...'
+with gzip.open('test_results_f256n25d4.csv.gz', 'r') as out:
+	for i in range(len(test_y)):
+		out.write(','.join([str(i+1), str(test_y[i])]))
+
+
+'''
 # random k-fold validation
-n = 1000 ## fold size
-n_folds = 2 ## number of repetitions
+n = 10000 ## fold size
+n_folds = 5 ## number of repetitions
 
 # grid search parameters
-n_trees = [10, 25, 50]
+n_trees = [10, 50, 250]
 max_depth = [2, 6, 12]
 max_features = [None]
 # learning_rate = [0.05, 0.1, 0.3]
@@ -73,10 +98,10 @@ for (nt, md, mfw) in [(i,j,k) for i in n_trees for j in max_depth for k in max_f
 	for trial in range(n_folds):
 		# fit the model to a random subset
 		sample = np.random.choice(train_x.shape[0],2*n) ## half is train, half is validation
-		print "building..."
+
 		# Create a random forest object with the n_trees and depth parameters. Will have 72 total models (3x3x8)
 		clf = ens.GradientBoostingRegressor(n_estimators=nt, max_depth = md, max_features=mfw)
-		print "predicting..."
+
 		# Fit this model to the data. train_x[(the first 1000 of the 2*1000 block of validation + training data), all features], train_y label vector
 		clf.fit(train_x[sample[0:n],:], train_y[sample[0:n]])
 
@@ -92,7 +117,6 @@ for (nt, md, mfw) in [(i,j,k) for i in n_trees for j in max_depth for k in max_f
 		mse.append((sum([(train_y[sample[n:-1]][i] - xhat[i])**2 for i in range(n-1)])/float(n-1))**0.5)
 
 	print '{0} Trees, {1} Depth, {3} Features: {2}'.format(nt, md, sum(mse)/float(len(mse)), mfw)
-'''
 importances = [np.mean([l[i] for l in importances]) for i in range(len(importances[1]))]
 indices = np.argsort(importances)[::-1]
 
@@ -103,13 +127,3 @@ for f in range(train_x.shape[1]):
 
 print indices[0:50]
 '''
-'''
-# predicting
-test_values = []
-with gzip.open('test.csv.gz') as g:
-	for line in g:
-		if line[0] == 's': ## pass over first line
-			continue
-		test_values.append([bool(x) for x in line.split(',')[1:-1]])
-
-test_values = np.array(test_values, dtype=bool)'''
