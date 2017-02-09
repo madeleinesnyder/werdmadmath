@@ -8,6 +8,7 @@ start_time = time.time()
 
 trainData = pd.read_csv('../train.csv.gz',compression="gzip")
 train_y = trainData.loc[:,"gap"]
+train_labels = trainData.loc[:,"smiles"]
 train_x = trainData.loc[:,:]
 train_x = train_x.drop("smiles",axis=1)
 train_x = train_x.drop("gap",axis=1)
