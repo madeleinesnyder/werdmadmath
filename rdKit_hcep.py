@@ -22,6 +22,11 @@ for i,label in enumerate(train_labels):
 	fp1 = AllChem.GetMorganFingerprintAsBitVect(m,2,nBits=1024)
 	features[:,i] = np.array([fp1])
 
+
+for i,feature in enumerate(features):
+	if (sum(feature == 0)):
+		print('all zeros in feature ' + str(i))
+
 fp1 = AllChem.GetMorganFingerprintAsBitVect(m,2,nBits=1024)
 fp1 = np.array([fp1])
 print(fp1)
